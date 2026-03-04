@@ -14,7 +14,7 @@ func TestGetPermissionsFromContext_EmptyContext(t *testing.T) {
 	req = req.WithContext(ctx)
 
 	perms := GetPermissionsFromContext(req)
-	if perms != nil && len(perms) > 0 {
+	if len(perms) > 0 {
 		t.Error("Expected empty permissions from empty context")
 	}
 }

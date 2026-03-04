@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"license-management-api/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"license-management-api/internal/models"
 )
 
 // Mock LicenseRepository
@@ -233,8 +233,6 @@ func TestLicenseExpiryCheck(t *testing.T) {
 
 	// Active license
 	activeLicense := &models.License{
-		ID:        1,
-		Status:    "Active",
 		ExpiresAt: now.AddDate(1, 0, 0),
 	}
 
@@ -243,8 +241,6 @@ func TestLicenseExpiryCheck(t *testing.T) {
 
 	// Expired license
 	expiredLicense := &models.License{
-		ID:        2,
-		Status:    "Expired",
 		ExpiresAt: now.AddDate(-1, 0, 0),
 	}
 

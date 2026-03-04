@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"license-management-api/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -14,10 +13,11 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	postgresdriver "gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"license-management-api/internal/models"
 )
 
 // setupHandlerDBTest starts PostgreSQL and initializes database for handler testing
-func setupHandlerDBTest(t *testing.T) (*gorm.DB, testcontainers.Container, error) {
+func setupHandlerDBTest(_ *testing.T) (*gorm.DB, testcontainers.Container, error) {
 	ctx := context.Background()
 
 	// Start PostgreSQL container
