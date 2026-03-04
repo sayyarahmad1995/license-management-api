@@ -1,0 +1,16 @@
+{{- /*
+Template for PDB (Pod Disruption Budget)
+*/ -}}
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "license-mgmt.fullname" . }}
+  labels:
+    {{- include "license-mgmt.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "license-mgmt.selectorLabels" . | nindent 6 }}
+{{- end }}

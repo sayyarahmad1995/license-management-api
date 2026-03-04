@@ -1,0 +1,31 @@
+{{- /*
+Template for ConfigMap that contains application configuration
+*/ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "license-mgmt.fullname" . }}-config
+  labels:
+    {{- include "license-mgmt.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.config.environment | quote }}
+  PORT: {{ .Values.config.port | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  
+  DB_PORT: {{ .Values.config.database.port | quote }}
+  DB_HOST: {{ .Values.config.database.host | quote }}
+  DB_DATABASE: {{ .Values.config.database.name | quote }}
+  
+  REDIS_PORT: {{ .Values.config.redis.port | quote }}
+  REDIS_HOST: {{ .Values.config.redis.host | quote }}
+  
+  JWT_EXPIRY_MINUTES: {{ .Values.config.jwt.expiryMinutes | quote }}
+  REFRESH_TOKEN_EXPIRY_DAYS: {{ .Values.config.jwt.refreshTokenExpiryDays | quote }}
+  
+  RATE_LIMIT_REQUESTS: {{ .Values.config.rateLimiting.requests | quote }}
+  RATE_LIMIT_WINDOW: {{ .Values.config.rateLimiting.window | quote }}
+  
+  CACHE_TTL: {{ .Values.config.cache.ttl | quote }}
+  
+  EMAIL_BATCH_SIZE: {{ .Values.config.email.batchSize | quote }}
+  BULK_OPERATION_BATCH_SIZE: {{ .Values.config.bulkOperations.batchSize | quote }}

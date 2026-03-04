@@ -1,0 +1,119 @@
+{{- /*
+Template for Deployment
+*/ -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "license-mgmt.fullname" . }}
+  labels:
+    {{- include "license-mgmt.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "license-mgmt.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "license-mgmt.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "license-mgmt.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      terminationGracePeriodSeconds: 30
+      
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.port }}
+              protocol: TCP
+          
+          envFrom:
+            - configMapRef:
+                name: {{ include "license-mgmt.fullname" . }}-config
+            - secretRef:
+                name: {{ include "license-mgmt.fullname" . }}-secrets
+          
+          {{- if .Values.healthChecks.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: http
+            initialDelaySeconds: {{ .Values.healthChecks.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthChecks.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthChecks.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthChecks.livenessProbe.failureThreshold }}
+          {{- end }}
+          
+          {{- if .Values.healthChecks.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: {{ .Values.healthChecks.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthChecks.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthChecks.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthChecks.readinessProbe.failureThreshold }}
+          {{- end }}
+          
+          {{- if .Values.healthChecks.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: http
+            initialDelaySeconds: {{ .Values.healthChecks.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthChecks.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthChecks.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthChecks.startupProbe.failureThreshold }}
+          {{- end }}
+          
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /var/cache
+      
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+      
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

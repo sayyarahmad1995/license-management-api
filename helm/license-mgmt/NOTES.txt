@@ -1,0 +1,21 @@
+1. Get the initial login credentials:
+   kubectl get secret --namespace license-mgmt license-mgmt-secrets -o jsonpath="{.data.DB_USERNAME}" | base64 --decode
+
+2. Port forward to access the API:
+   kubectl port-forward svc/license-mgmt-api -n license-mgmt 8080:8080
+
+3. Access the API at:
+   http://localhost:8080
+
+4. View application logs:
+   kubectl logs -n license-mgmt -l app=license-mgmt-api -f
+
+5. Check deployment status:
+   kubectl get deployment -n license-mgmt
+   kubectl get pods -n license-mgmt
+
+6. View metrics (if Prometheus is installed):
+   kubectl port-forward -n license-mgmt svc/license-mgmt-api 8080:8080
+   Visit http://localhost:8080/metrics
+
+IMPORTANT: Please update the secrets in values.yaml before deploying to production!

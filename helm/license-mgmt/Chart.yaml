@@ -1,0 +1,17 @@
+apiVersion: v2
+name: license-mgmt
+description: A comprehensive License Management System with REST API
+type: application
+version: 1.0.0
+appVersion: "1.0"
+home: https://github.com/yourusername/license-management-api
+sources:
+  - https://github.com/yourusername/license-management-api
+maintainers:
+  - name: Your Organization
+    email: support@yourdomain.com
+keywords:
+  - license-management
+  - rest-api
+  - golang
+dependencies: []
