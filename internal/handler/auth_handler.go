@@ -169,7 +169,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// Set secure HTTP-only cookies
 	h.setAuthCookies(w, result.AccessToken, result.RefreshToken)
 
-	// Return tokens only (user details available via /auth/me endpoint)
+	// Return login success
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"message": "Login successful",
 	})

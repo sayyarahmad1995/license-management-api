@@ -417,16 +417,6 @@ func (s *Server) setupRoutes(deps *ServiceDependencies) http.Handler {
 		s.log.Info("Security headers enabled", "environment", env)
 	}
 
-	// CSRF protection middleware
-	var csrfConfig *middleware.CSRFConfig
-	enableCSRF := config.GetConfigString("ENABLE_CSRF")
-	if enableCSRF == "true" || enableCSRF == "" {
-		csrfConfig = middleware.DefaultCSRFConfig()
-		csrfConfig.SkipURLPatterns = []string{"/health", "/livez", "/readyz", "/startup", "/metrics", "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/auth/rotate", "/api/v1/auth/logout", "/csrf-token"}
-		r.Use(middleware.CSRFMiddleware(csrfConfig))
-		s.log.Info("CSRF protection enabled")
-	}
-
 	// CORS middleware
 	corsOriginsStr := config.GetConfigString("CORS_ORIGINS")
 	corsOrigins := middleware.ParseCORSOrigins(corsOriginsStr)
@@ -438,11 +428,6 @@ func (s *Server) setupRoutes(deps *ServiceDependencies) http.Handler {
 		s.log.Info("CORS enabled for origins", "origins", corsOrigins)
 	} else {
 		s.log.Warn("CORS not configured - no origins allowed for cross-origin requests")
-	}
-
-	// CSRF token endpoint (public, before all other routes)
-	if csrfConfig != nil {
-		r.Get("/csrf-token", middleware.GetCSRFTokenHandlerFunc(csrfConfig.Store))
 	}
 
 	// All API routes under /api/v1
