@@ -2,17 +2,12 @@ package dto
 
 import "time"
 
-// TokenRotationRequest represents a token rotation request
-type TokenRotationRequest struct {
-	RefreshToken string `json:"refresh_token" binding:"required"`
-}
-
 // TokenRotationResponse represents a token rotation response
 type TokenRotationResponse struct {
-	AccessToken      string    `json:"access_token"`
-	RefreshToken     string    `json:"refresh_token"`
-	ExpiresAt        time.Time `json:"expires_at"`
-	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
+	AccessToken      string    `json:"accessToken"`
+	RefreshToken     string    `json:"refreshToken"`
+	ExpiresAt        time.Time `json:"expiresAt"`
+	RefreshExpiresAt time.Time `json:"refreshExpiresAt"`
 }
 
 // MachineFingerprint represents machine fingerprint data

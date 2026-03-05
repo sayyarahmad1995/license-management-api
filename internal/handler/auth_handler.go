@@ -286,31 +286,28 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 // RotateToken handles token rotation for enhanced security
 // @Summary Rotate authentication tokens
-// @Description Generate a new token pair from a valid refresh token
+// @Description Generate a new token pair from the refresh token in cookies
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body dto.TokenRotationRequest true "Refresh token"
 // @Success 200 {object} dto.TokenRotationResponse "New token pair"
-// @Failure 400 {object} errors.ApiError "Invalid request"
-// @Failure 401 {object} errors.ApiError "Invalid or expired token"
+// @Failure 401 {object} errors.ApiError "Invalid or missing refresh token"
+// @Failure 500 {object} errors.ApiError "Internal server error"
 // @Router /api/v1/auth/rotate [post]
+// @Security BearerAuth
 func (h *AuthHandler) RotateToken(w http.ResponseWriter, r *http.Request) {
-	var req dto.TokenRotationRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, errors.NewBadRequestError("Invalid request body"))
+	// Get refresh token from cookie
+	refreshTokenCookie, err := r.Cookie("refreshToken")
+	if err != nil {
+		writeError(w, errors.NewUnauthorizedError("Missing refresh token"))
 		return
 	}
 
-	// Validate request
-	if req.RefreshToken == "" {
-		writeError(w, errors.NewBadRequestError("refresh_token is required"))
-		return
-	}
+	refreshToken := refreshTokenCookie.Value
 
 	// Check if token is revoked
 	if h.tokenRevocationSvc != nil {
-		isRevoked, _ := h.tokenRevocationSvc.IsTokenRevoked(req.RefreshToken)
+		isRevoked, _ := h.tokenRevocationSvc.IsTokenRevoked(refreshToken)
 		if isRevoked {
 			writeError(w, errors.NewUnauthorizedError("Token has been revoked"))
 			return
@@ -323,15 +320,18 @@ func (h *AuthHandler) RotateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rotatedPair, err := h.tokenRotationSvc.RotateToken(req.RefreshToken)
+	rotatedPair, err := h.tokenRotationSvc.RotateToken(refreshToken)
 	if err != nil {
 		writeError(w, err.(*errors.ApiError))
 		return
 	}
 
+	// Set new token cookies
+	h.setAuthCookies(w, rotatedPair.AccessToken, rotatedPair.RefreshToken)
+
 	// Optionally revoke the old refresh token
 	if h.tokenRevocationSvc != nil {
-		h.tokenRevocationSvc.RevokeToken(req.RefreshToken, rotatedPair.RefreshExpiresAt)
+		h.tokenRevocationSvc.RevokeToken(refreshToken, rotatedPair.RefreshExpiresAt)
 	}
 
 	writeJSON(w, http.StatusOK, &dto.TokenRotationResponse{
