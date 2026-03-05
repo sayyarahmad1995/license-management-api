@@ -551,15 +551,23 @@ func (ah *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// GetMe should use the CurrentUser from auth service
-	// In a real scenario, we'd have the user in context
+	// Fetch the actual user from database
+	user, apiErr := ah.authSvc.GetUserByID(userID)
+	if apiErr != nil {
+		writeError(w, apiErr)
+		return
+	}
+
+	// Map User model to GetMeResponse
 	response := &dto.GetMeResponse{
-		ID:        userID,
-		Username:  "user",
-		Email:     "user@example.com",
-		Role:      "user",
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     user.Email,
+		Role:      user.Role,
+		Status:    user.Status,
+		LastLogin: user.LastLogin,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: *user.UpdatedAt,
 	}
 
 	writeJSON(w, http.StatusOK, response)

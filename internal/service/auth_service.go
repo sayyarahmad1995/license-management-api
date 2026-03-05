@@ -17,6 +17,7 @@ type AuthService interface {
 	Register(req *dto.RegisterDto, ipAddress string) (*models.User, *errors.ApiError)
 	Login(req *dto.LoginDto, ipAddress string) (*dto.LoginResultDto, *errors.ApiError)
 	ValidateUser(email string) (*models.User, *errors.ApiError)
+	GetUserByID(userID int) (*models.User, *errors.ApiError)
 	ChangePassword(userID int, req *dto.ChangePasswordDto) *errors.ApiError
 	VerifyEmail(token string) *errors.ApiError
 	ResendVerificationEmail(email string) *errors.ApiError
@@ -375,4 +376,18 @@ func (as *authService) RevokeToken(refreshToken string) *errors.ApiError {
 	}
 
 	return nil
+}
+
+// GetUserByID retrieves a user by their ID
+func (as *authService) GetUserByID(userID int) (*models.User, *errors.ApiError) {
+	if userID <= 0 {
+		return nil, errors.NewBadRequestError("Invalid user ID")
+	}
+
+	user, err := as.userRepo.GetByID(userID)
+	if err != nil {
+		return nil, errors.NewNotFoundError("User not found")
+	}
+
+	return user, nil
 }
