@@ -261,7 +261,7 @@ func (s *Server) initializeDependencies(userRepo repository.IUserRepository, lic
 
 	// Initialize permission service
 	permissionSvc := service.NewPermissionService(userRepo)
-	permissionHandler := handler.NewPermissionHandler(permissionSvc)
+	permissionHandler := handler.NewPermissionHandler(permissionSvc, userRepo)
 
 	// Return all dependencies
 	return &ServiceDependencies{

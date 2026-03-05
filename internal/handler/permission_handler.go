@@ -3,23 +3,28 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 
 	"license-management-api/internal/dto"
 	"license-management-api/internal/errors"
 	"license-management-api/internal/middleware"
 	"license-management-api/internal/models"
+	"license-management-api/internal/repository"
 	"license-management-api/internal/service"
 )
 
 type PermissionHandler struct {
 	permissionSvc service.PermissionService
-	userRepo      interface{} // Would be IUserRepository in practice
+	userRepo      repository.IUserRepository
 }
 
 // NewPermissionHandler creates a new permission handler
-func NewPermissionHandler(permissionSvc service.PermissionService) *PermissionHandler {
+func NewPermissionHandler(permissionSvc service.PermissionService, userRepo repository.IUserRepository) *PermissionHandler {
 	return &PermissionHandler{
 		permissionSvc: permissionSvc,
+		userRepo:      userRepo,
 	}
 }
 
@@ -42,8 +47,13 @@ func (ph *PermissionHandler) GetUserPermissions(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// In a real implementation, parse userID from URL
-	userID := 1 // Placeholder
+	// Parse userID from URL parameter
+	userIDStr := chi.URLParam(r, "userId")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		writeError(w, errors.NewBadRequestError("Invalid user ID"))
+		return
+	}
 
 	perms, err := ph.permissionSvc.GetUserPermissions(userID)
 	if err != nil {
@@ -84,7 +94,8 @@ func (ph *PermissionHandler) GetRolePermissions(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	roleStr := "Admin" // Placeholder, would get from URL param
+	// Parse role from URL parameter
+	roleStr := chi.URLParam(r, "role")
 	userRole := models.UserRole(roleStr)
 
 	perms := ph.permissionSvc.GetRolePermissions(userRole)
@@ -265,10 +276,24 @@ func (ph *PermissionHandler) ResetUserPermissions(w http.ResponseWriter, r *http
 		return
 	}
 
-	userID := 1 // Placeholder, would get from URL param
+	// Parse userID from URL parameter
+	userIDStr := chi.URLParam(r, "userId")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		writeError(w, errors.NewBadRequestError("Invalid user ID"))
+		return
+	}
 
+	// Reset user permissions to role defaults
 	if err := ph.permissionSvc.ResetUserPermissionsToRole(userID); err != nil {
 		writeError(w, errors.NewInternalError("Failed to reset user permissions"))
+		return
+	}
+
+	// Fetch the user to get their actual role
+	user, err := ph.userRepo.GetByID(userID)
+	if err != nil {
+		writeError(w, errors.NewNotFoundError("User not found"))
 		return
 	}
 
@@ -276,7 +301,7 @@ func (ph *PermissionHandler) ResetUserPermissions(w http.ResponseWriter, r *http
 		Status:  "success",
 		Message: "User permissions reset to role defaults",
 		UserID:  userID,
-		Role:    "User", // Placeholder
+		Role:    string(user.Role),
 	}
 
 	writeJSON(w, http.StatusOK, response)

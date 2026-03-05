@@ -140,6 +140,13 @@ func (as *authService) Login(req *dto.LoginDto, ipAddress string) (*dto.LoginRes
 		return nil, errors.NewUnauthorizedError("User account is not active")
 	}
 
+	// Update last_login timestamp
+	now := time.Now().UTC()
+	user.LastLogin = &now
+	if err := as.userRepo.Update(user); err != nil {
+		// Log but don't fail login if last_login update fails
+	}
+
 	// Generate tokens
 	accessToken, errAT := as.tokenSvc.GenerateAccessToken(user.ID, user.Email, user.Role)
 	if errAT != nil {
