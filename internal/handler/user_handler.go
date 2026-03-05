@@ -107,13 +107,13 @@ func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	userDtos := make([]map[string]interface{}, len(users))
 	for i, user := range users {
 		userDtos[i] = map[string]interface{}{
-			"id":         user.ID,
-			"username":   user.Username,
-			"email":      user.Email,
-			"role":       user.Role,
-			"status":     user.Status,
-			"created_at": user.CreatedAt,
-			"last_login": user.LastLogin,
+			"id":        user.ID,
+			"username":  user.Username,
+			"email":     user.Email,
+			"role":      user.Role,
+			"status":    user.Status,
+			"createdAt": user.CreatedAt,
+			"lastLogin": user.LastLogin,
 		}
 	}
 

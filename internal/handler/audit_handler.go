@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"license-management-api/internal/dto"
 	"license-management-api/internal/errors"
 	"license-management-api/internal/models"
 	"license-management-api/internal/repository"
@@ -17,6 +18,20 @@ type AuditHandler struct {
 func NewAuditHandler(auditRepo repository.IAuditLogRepository) *AuditHandler {
 	return &AuditHandler{
 		auditRepo: auditRepo,
+	}
+}
+
+// mapAuditLogToDto converts a models.AuditLog to a dto.AuditLogDto with camelCase JSON fields
+func mapAuditLogToDto(log models.AuditLog) dto.AuditLogDto {
+	return dto.AuditLogDto{
+		ID:         log.ID,
+		Action:     log.Action,
+		EntityType: log.EntityType,
+		EntityID:   log.EntityID,
+		UserID:     log.UserID,
+		Details:    log.Details,
+		IpAddress:  log.IpAddress,
+		Timestamp:  log.Timestamp,
 	}
 }
 
@@ -112,20 +127,26 @@ func (h *AuditHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 
 	totalPages := (total + pageSize - 1) / pageSize
 
+	// Convert audit log models to DTOs for camelCase serialization
+	auditDtos := make([]dto.AuditLogDto, len(filteredLogs))
+	for i, log := range filteredLogs {
+		auditDtos[i] = mapAuditLogToDto(log)
+	}
+
 	response := map[string]interface{}{
 		"pageIndex":  pageIndex,
 		"pageSize":   pageSize,
 		"total":      total,
 		"totalPages": totalPages,
-		"count":      len(filteredLogs),
-		"logs":       filteredLogs,
+		"count":      len(auditDtos),
+		"logs":       auditDtos,
 	}
 
 	if action != "" {
 		response["action"] = action
 	}
 	if entityType != "" {
-		response["entity_type"] = entityType
+		response["entityType"] = entityType
 	}
 
 	writeJSON(w, http.StatusOK, response)
@@ -203,14 +224,20 @@ func (h *AuditHandler) GetAuditLogsByUser(w http.ResponseWriter, r *http.Request
 
 	totalPages := (total + pageSize - 1) / pageSize
 
+	// Convert audit log models to DTOs for camelCase serialization
+	auditDtos := make([]dto.AuditLogDto, len(userLogs))
+	for i, log := range userLogs {
+		auditDtos[i] = mapAuditLogToDto(log)
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"pageIndex":  pageIndex,
 		"pageSize":   pageSize,
-		"user_id":    userID,
+		"userId":     userID,
 		"total":      total,
 		"totalPages": totalPages,
-		"count":      len(userLogs),
-		"logs":       userLogs,
+		"count":      len(auditDtos),
+		"logs":       auditDtos,
 	})
 }
 
@@ -253,4 +280,3 @@ func (h *AuditHandler) GetAuditLogStats(w http.ResponseWriter, r *http.Request) 
 		"entity_summary": entityCounts,
 	})
 }
-

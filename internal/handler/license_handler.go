@@ -126,18 +126,18 @@ func (h *LicenseHandler) GetLicenses(w http.ResponseWriter, r *http.Request) {
 	licenseDtos := make([]map[string]interface{}, len(filtered))
 	for i, license := range filtered {
 		licenseDtos[i] = map[string]interface{}{
-			"id":                license.ID,
-			"license_key":       license.LicenseKey,
-			"user_id":           license.UserID,
-			"status":            license.Status,
-			"created_at":        license.CreatedAt,
-			"expires_at":        license.ExpiresAt,
-			"revoked_at":        license.RevokedAt,
-			"max_activations":   license.MaxActivations,
-			"activation_count":  len(license.Activations),
-			"is_expired":        license.IsExpired(),
-			"is_revoked":        license.IsRevoked(),
-			"days_until_expiry": calculateDaysUntilExpiry(license.ExpiresAt),
+			"id":              license.ID,
+			"licenseKey":      license.LicenseKey,
+			"userId":          license.UserID,
+			"status":          license.Status,
+			"createdAt":       license.CreatedAt,
+			"expiresAt":       license.ExpiresAt,
+			"revokedAt":       license.RevokedAt,
+			"maxActivations":  license.MaxActivations,
+			"activationCount": len(license.Activations),
+			"isExpired":       license.IsExpired(),
+			"isRevoked":       license.IsRevoked(),
+			"daysUntilExpiry": calculateDaysUntilExpiry(license.ExpiresAt),
 		}
 	}
 
@@ -156,7 +156,7 @@ func (h *LicenseHandler) GetLicenses(w http.ResponseWriter, r *http.Request) {
 		response["status"] = status
 	}
 	if userIDStr != "" {
-		response["user_id"] = userIDStr
+		response["userId"] = userIDStr
 	}
 	if search != "" {
 		response["search"] = search
@@ -205,31 +205,31 @@ func (h *LicenseHandler) GetLicense(w http.ResponseWriter, r *http.Request) {
 	activationDtos := make([]map[string]interface{}, len(license.Activations))
 	for i, activation := range license.Activations {
 		activationDtos[i] = map[string]interface{}{
-			"id":                  activation.ID,
-			"machine_fingerprint": activation.MachineFingerprint,
-			"hostname":            activation.Hostname,
-			"ip_address":          activation.IpAddress,
-			"activated_at":        activation.ActivatedAt,
-			"deactivated_at":      activation.DeactivatedAt,
-			"last_seen_at":        activation.LastSeenAt,
-			"is_active":           activation.IsActive(),
+			"id":                 activation.ID,
+			"machineFingerprint": activation.MachineFingerprint,
+			"hostname":           activation.Hostname,
+			"ipAddress":          activation.IpAddress,
+			"activatedAt":        activation.ActivatedAt,
+			"deactivatedAt":      activation.DeactivatedAt,
+			"lastSeenAt":         activation.LastSeenAt,
+			"isActive":           activation.IsActive(),
 		}
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"id":                license.ID,
-		"license_key":       license.LicenseKey,
-		"user_id":           license.UserID,
-		"status":            license.Status,
-		"created_at":        license.CreatedAt,
-		"expires_at":        license.ExpiresAt,
-		"revoked_at":        license.RevokedAt,
-		"max_activations":   license.MaxActivations,
-		"activation_count":  len(license.Activations),
-		"activations":       activationDtos,
-		"is_expired":        license.IsExpired(),
-		"is_revoked":        license.IsRevoked(),
-		"days_until_expiry": calculateDaysUntilExpiry(license.ExpiresAt),
+		"id":              license.ID,
+		"licenseKey":      license.LicenseKey,
+		"userId":          license.UserID,
+		"status":          license.Status,
+		"createdAt":       license.CreatedAt,
+		"expiresAt":       license.ExpiresAt,
+		"revokedAt":       license.RevokedAt,
+		"maxActivations":  license.MaxActivations,
+		"activationCount": len(license.Activations),
+		"activations":     activationDtos,
+		"isExpired":       license.IsExpired(),
+		"isRevoked":       license.IsRevoked(),
+		"daysUntilExpiry": calculateDaysUntilExpiry(license.ExpiresAt),
 	})
 }
 
@@ -347,7 +347,19 @@ func (h *LicenseHandler) CreateLicense(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusCreated, map[string]interface{}{
 		"message": "License created successfully",
-		"license": license,
+		"license": map[string]interface{}{
+			"id":              license.ID,
+			"licenseKey":      license.LicenseKey,
+			"userId":          license.UserID,
+			"status":          license.Status,
+			"createdAt":       license.CreatedAt,
+			"expiresAt":       license.ExpiresAt,
+			"revokedAt":       license.RevokedAt,
+			"maxActivations":  license.MaxActivations,
+			"activationCount": len(license.Activations),
+			"isExpired":       license.IsExpired(),
+			"isRevoked":       license.IsRevoked(),
+		},
 	})
 }
 
@@ -485,7 +497,19 @@ func (h *LicenseHandler) RenewLicense(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"message": "License renewed successfully",
-		"license": license,
+		"license": map[string]interface{}{
+			"id":              license.ID,
+			"licenseKey":      license.LicenseKey,
+			"userId":          license.UserID,
+			"status":          license.Status,
+			"createdAt":       license.CreatedAt,
+			"expiresAt":       license.ExpiresAt,
+			"revokedAt":       license.RevokedAt,
+			"maxActivations":  license.MaxActivations,
+			"activationCount": len(license.Activations),
+			"isExpired":       license.IsExpired(),
+			"isRevoked":       license.IsRevoked(),
+		},
 	})
 }
 
@@ -541,7 +565,19 @@ func (h *LicenseHandler) RevokeLicense(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"message": "License revoked successfully",
-		"license": license,
+		"license": map[string]interface{}{
+			"id":              license.ID,
+			"licenseKey":      license.LicenseKey,
+			"userId":          license.UserID,
+			"status":          license.Status,
+			"createdAt":       license.CreatedAt,
+			"expiresAt":       license.ExpiresAt,
+			"revokedAt":       license.RevokedAt,
+			"maxActivations":  license.MaxActivations,
+			"activationCount": len(license.Activations),
+			"isExpired":       license.IsExpired(),
+			"isRevoked":       license.IsRevoked(),
+		},
 	})
 }
 

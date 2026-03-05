@@ -132,12 +132,12 @@ func (h *DashboardHandler) GetUserDashboard(w http.ResponseWriter, r *http.Reque
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"user_id": userID,
+		"userId": userID,
 		"licenses": map[string]interface{}{
-			"total":         len(userLicenses),
-			"active":        activeLicenses,
-			"expired":       expiredLicenses,
-			"expiring_soon": expiringLicenses,
+			"total":        len(userLicenses),
+			"active":       activeLicenses,
+			"expired":      expiredLicenses,
+			"expiringSoon": expiringLicenses,
 		},
 		"activations": map[string]interface{}{
 			"total": totalActivations,
