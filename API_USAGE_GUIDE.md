@@ -116,21 +116,36 @@ Authorization: Bearer <access_token>
 
 **Endpoint:** `POST /auth/refresh`
 
-**Request Body:**
-```json
-{
-  "refreshToken": "<your_refresh_token>"
-}
-```
+**Note:** The refresh token is automatically read from the `refreshToken` cookie. No request body needed.
 
 **Response:**
 ```json
 {
-  "message": "Token refreshed successfully",
-  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-  "expiresIn": 3600
+  "message": "Token refreshed successfully"
 }
 ```
+
+The new `accessToken` is automatically set in the `accessToken` cookie.
+
+### 5. Rotate Tokens (Enhanced Security)
+
+**Endpoint:** `POST /auth/rotate`
+
+**Description:** Generates a new token pair and revokes the old refresh token. Useful for periodic token refresh or after sensitive operations.
+
+**Note:** The refresh token is automatically read from the `refreshToken` cookie. No request body needed.
+
+**Response:**
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+  "expiresAt": "2026-03-05T15:22:00Z",
+  "refreshExpiresAt": "2026-03-12T14:22:00Z"
+}
+```
+
+Both new `accessToken` and `refreshToken` are automatically set in their respective cookies. The old refresh token is automatically revoked.
 
 ---
 
@@ -594,6 +609,23 @@ curl -X GET http://localhost:8080/api/v1/dashboard/activity-timeline \
 # Get system-wide statistics (requires Admin role)
 curl -X GET http://localhost:8080/api/v1/dashboard/admin \
   -H "Authorization: Bearer <admin_access_token>"
+```
+
+### Use Case 5: Rotate Tokens for Enhanced Security
+
+```bash
+# Refresh access token (reads refreshToken from cookies automatically)
+curl -X POST http://localhost:8080/api/v1/auth/refresh \
+  -H "Cookie: refreshToken=<your_refresh_token>" \
+  -c cookies.txt
+
+# Rotate tokens (generates new pair, revokes old refresh token)
+curl -X POST http://localhost:8080/api/v1/auth/rotate \
+  -H "Cookie: refreshToken=<your_refresh_token>" \
+  -c cookies.txt
+
+# Both endpoints automatically set new tokens in cookies
+# No request body needed - tokens come from cookies
 ```
 
 ---
