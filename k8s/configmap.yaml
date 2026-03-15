@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: license-mgmt-config
+  namespace: license-mgmt
+data:
+  ENVIRONMENT: "production"
+  PORT: "8080"
+  LOG_LEVEL: "info"
+  DB_PORT: "5432"
+  REDIS_PORT: "6379"
+  JWT_EXPIRY_MINUTES: "60"
+  REFRESH_TOKEN_EXPIRY_DAYS: "7"
+  MAX_CONCURRENT_SESSIONS: "5"
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_WINDOW: "1m"
+  CACHE_TTL: "3600"
+  EMAIL_BATCH_SIZE: "10"
+  BULK_OPERATION_BATCH_SIZE: "100"

@@ -1,0 +1,1046 @@
+basePath: /api/v1
+definitions:
+  dto.ActivateLicenseDto:
+    properties:
+      hostname:
+        type: string
+      ipAddress:
+        type: string
+      licenseKey:
+        type: string
+      machineFingerprint:
+        type: string
+    required:
+    - licenseKey
+    - machineFingerprint
+    type: object
+  dto.CreateLicenseDto:
+    properties:
+      expiresAt:
+        type: string
+      maxActivations:
+        minimum: 0
+        type: integer
+      userId:
+        type: integer
+    required:
+    - expiresAt
+    - userId
+    type: object
+  dto.DeactivateLicenseDto:
+    properties:
+      licenseKey:
+        type: string
+      machineFingerprint:
+        type: string
+    required:
+    - licenseKey
+    - machineFingerprint
+    type: object
+  dto.LicenseValidationDto:
+    properties:
+      licenseKey:
+        type: string
+      machineFingerprint:
+        type: string
+    required:
+    - licenseKey
+    - machineFingerprint
+    type: object
+  dto.LicenseValidationResultDto:
+    properties:
+      expiresAt:
+        type: string
+      isValid:
+        type: boolean
+      message:
+        type: string
+    type: object
+  dto.LoginDto:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.RegisterDto:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  dto.RenewLicenseDto:
+    properties:
+      expiresAt:
+        type: string
+      licenseId:
+        type: integer
+    required:
+    - expiresAt
+    - licenseId
+    type: object
+  dto.UpdateLicenseStatusDto:
+    properties:
+      status:
+        enum:
+        - Active
+        - Revoked
+        type: string
+    required:
+    - status
+    type: object
+  dto.UpdateUserDto:
+    properties:
+      notify_account_activity:
+        type: boolean
+      notify_license_expiry:
+        type: boolean
+      notify_system_announcements:
+        type: boolean
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    type: object
+  dto.UpdateUserRoleDto:
+    properties:
+      role:
+        enum:
+        - User
+        - Manager
+        - Admin
+        type: string
+    required:
+    - role
+    type: object
+  dto.UpdateUserStatusDto:
+    properties:
+      status:
+        enum:
+        - Unverified
+        - Verified
+        - Active
+        - Blocked
+        type: string
+    required:
+    - status
+    type: object
+  errors.ApiError:
+    properties:
+      details: {}
+      message:
+        type: string
+      status:
+        type: integer
+      type:
+        $ref: '#/definitions/errors.ErrorType'
+    type: object
+  errors.ErrorType:
+    enum:
+    - VALIDATION_ERROR
+    - NOT_FOUND_ERROR
+    - UNAUTHORIZED_ERROR
+    - FORBIDDEN_ERROR
+    - CONFLICT_ERROR
+    - INTERNAL_ERROR
+    - BAD_REQUEST_ERROR
+    - RATE_LIMIT_ERROR
+    type: string
+    x-enum-varnames:
+    - ValidationError
+    - NotFoundError
+    - UnauthorizedError
+    - ForbiddenError
+    - ConflictError
+    - InternalError
+    - BadRequestError
+    - RateLimitError
+host: localhost:8080
+info:
+  contact:
+    name: API Support
+    url: http://www.swagger.io/support
+  description: A high-performance license management system built with Go
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: License Management API
+  version: "1.0"
+paths:
+  /audit-logs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve audit logs (Admins see all, users see only their own)
+      parameters:
+      - description: Page index (default 1)
+        in: query
+        name: pageIndex
+        type: integer
+      - description: Page size (default 20, max 100)
+        in: query
+        name: pageSize
+        type: integer
+      - description: Filter by action
+        in: query
+        name: action
+        type: string
+      - description: Filter by entity type
+        in: query
+        name: entity_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of audit logs
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Get audit logs
+      tags:
+      - Audit
+  /audit-logs/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get aggregated statistics about audit logs (Admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Audit log statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Get audit log statistics
+      tags:
+      - Audit
+  /audit-logs/user:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve audit logs specific to a user (Admin only)
+      parameters:
+      - description: User ID to filter logs
+        in: query
+        name: user_id
+        required: true
+        type: integer
+      - description: Page index (default 1)
+        in: query
+        name: pageIndex
+        type: integer
+      - description: Page size (default 20, max 100)
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of user audit logs
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Get audit logs for a user
+      tags:
+      - Audit
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password. Returns JWT tokens in
+        secure HTTP-only cookies.
+      parameters:
+      - description: Login request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "429":
+          description: Too many login attempts
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      summary: User login
+      tags:
+      - Authentication
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Clear authentication cookies and log out the user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logged out successfully
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: User logout
+      tags:
+      - Authentication
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using the refresh token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid or missing refresh token
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Refresh access token
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with email and password
+      parameters:
+      - description: Registration request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "409":
+          description: User already exists
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      summary: Register a new user
+      tags:
+      - Authentication
+  /dashboard:
+    get:
+      consumes:
+      - application/json
+      description: Get dashboard statistics specific to the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User dashboard statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Get user dashboard
+      tags:
+      - Dashboard
+  /dashboard/admin:
+    get:
+      consumes:
+      - application/json
+      description: Get system-wide dashboard statistics (Admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dashboard statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Get dashboard statistics
+      tags:
+      - Dashboard
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Check if the API and database are healthy
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: API is healthy
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Service unavailable
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Check API health
+      tags:
+      - Health
+  /licenses:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of all licenses (Admin only)
+      parameters:
+      - description: Page index (default 1)
+        in: query
+        name: pageIndex
+        type: integer
+      - description: Page size (default 10, max 100)
+        in: query
+        name: pageSize
+        type: integer
+      - description: Filter by license status
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of licenses
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Get all licenses
+      tags:
+      - Licenses
+    post:
+      consumes:
+      - application/json
+      description: Create a new license for a user (Admin only)
+      parameters:
+      - description: License creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateLicenseDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: License created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Create a new license
+      tags:
+      - Licenses
+  /licenses/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Mark a license as revoked, preventing further use (Admin only)
+      parameters:
+      - description: License ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: License revoked successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "404":
+          description: License not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Revoke a license
+      tags:
+      - Licenses
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific license with all its details
+      parameters:
+      - description: License ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: License details
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: License not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Get license by ID
+      tags:
+      - Licenses
+  /licenses/{id}/renew:
+    post:
+      consumes:
+      - application/json
+      description: Extend the expiration date of a license (Admin only)
+      parameters:
+      - description: License ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: License renewal request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RenewLicenseDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: License renewed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "404":
+          description: License not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Renew a license
+      tags:
+      - Licenses
+  /licenses/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Change the status of a license (Admin only)
+      parameters:
+      - description: License ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Status update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateLicenseStatusDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: License status updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "404":
+          description: License not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Update license status
+      tags:
+      - Licenses
+  /licenses/activate:
+    post:
+      consumes:
+      - application/json
+      description: Activate a license on a specific machine using fingerprint
+      parameters:
+      - description: License activation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ActivateLicenseDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: License activated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "404":
+          description: License not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      summary: Activate a license
+      tags:
+      - Licenses
+  /licenses/deactivate:
+    post:
+      consumes:
+      - application/json
+      description: Remove a license activation from a specific machine
+      parameters:
+      - description: License deactivation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DeactivateLicenseDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: License deactivated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      summary: Deactivate a license
+      tags:
+      - Licenses
+  /licenses/export:
+    get:
+      consumes:
+      - application/json
+      description: Download all licenses in CSV format (Admin only)
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV file
+          schema:
+            type: file
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Export all licenses as CSV
+      tags:
+      - Licenses
+  /licenses/validate:
+    post:
+      consumes:
+      - application/json
+      description: Check if a license is valid and not expired or revoked
+      parameters:
+      - description: License validation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LicenseValidationDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Validation result
+          schema:
+            $ref: '#/definitions/dto.LicenseValidationResultDto'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      summary: Validate a license
+      tags:
+      - Licenses
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of all users (Admin only)
+      parameters:
+      - description: Page index (default 1)
+        in: query
+        name: pageIndex
+        type: integer
+      - description: Page size (default 10, max 100)
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Get all users
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user account (Admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Delete a user
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific user's details
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User details
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Access denied
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Update user profile information
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "403":
+          description: Access denied
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - Users
+  /users/{id}/role:
+    patch:
+      consumes:
+      - application/json
+      description: Change a user's role (Admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Role update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRoleDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User role updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Update user role
+      tags:
+      - Users
+  /users/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Change a user's account status (Admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Status update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserStatusDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User status updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Update user status
+      tags:
+      - Users
+  /users/by-license/{key}:
+    get:
+      consumes:
+      - application/json
+      description: Find the user associated with a specific license key (Admin only)
+      parameters:
+      - description: License key
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User details
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+        "404":
+          description: License or user not found
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Get user by license key
+      tags:
+      - Users
+  /users/export:
+    get:
+      consumes:
+      - application/json
+      description: Download all users in CSV format (Admin only)
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV file
+          schema:
+            type: file
+        "403":
+          description: Admin access required
+          schema:
+            $ref: '#/definitions/errors.ApiError'
+      security:
+      - BearerAuth: []
+      summary: Export all users as CSV
+      tags:
+      - Users
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: JWT token in the format "Bearer {token}"
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

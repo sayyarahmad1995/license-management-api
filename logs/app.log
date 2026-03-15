@@ -1,0 +1,6 @@
+time=2026-03-15T15:27:38.769+05:00 level=INFO msg="Initializing API Server" port=8080 environment=development
+time=2026-03-15T15:27:38.805+05:00 level=INFO msg="Redis connection established successfully"
+time=2026-03-15T15:27:38.805+05:00 level=INFO msg="Rate limiting disabled in development environment"
+time=2026-03-15T15:27:38.811+05:00 level=INFO msg="Security headers enabled" environment=development
+time=2026-03-15T15:27:38.811+05:00 level=INFO msg="CORS enabled for origins" origins="[http://localhost:3000 http://localhost:5173 http://localhost:3002]"
+time=2026-03-15T15:27:38.812+05:00 level=INFO msg="API Server configured successfully" address=:8080

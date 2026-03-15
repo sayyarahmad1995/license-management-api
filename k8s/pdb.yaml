@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: license-mgmt-api-pdb
+  namespace: license-mgmt
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: license-mgmt-api
