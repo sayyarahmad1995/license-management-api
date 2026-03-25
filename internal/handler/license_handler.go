@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -52,6 +53,10 @@ func NewLicenseHandler(licenseSvc service.LicenseService, licenseRepo repository
 // @Param pageIndex query int false "Page index (default 1)"
 // @Param pageSize query int false "Page size (default 10, max 100)"
 // @Param status query string false "Filter by license status"
+// @Param user_id query int false "Filter by user ID"
+// @Param search query string false "Search in license key"
+// @Param sortColumn query string false "Sort column (licenseKey, userId, status, expiresAt, createdAt, maxActivations, activeActivations)"
+// @Param sortDirection query string false "Sort direction (asc or desc)"
 // @Success 200 {object} map[string]interface{} "List of licenses"
 // @Failure 403 {object} errors.ApiError "Admin access required"
 // @Router /licenses [get]
@@ -80,6 +85,13 @@ func (h *LicenseHandler) GetLicenses(w http.ResponseWriter, r *http.Request) {
 	status := strings.TrimSpace(r.URL.Query().Get("status"))
 	userIDStr := strings.TrimSpace(r.URL.Query().Get("user_id"))
 	search := strings.TrimSpace(r.URL.Query().Get("search"))
+
+	// Parse sort parameters
+	sortColumn := strings.TrimSpace(r.URL.Query().Get("sortColumn"))
+	sortDirection := strings.TrimSpace(r.URL.Query().Get("sortDirection"))
+	if sortDirection != "asc" && sortDirection != "desc" {
+		sortDirection = "asc"
+	}
 
 	// Try to get licenses from cache
 	var licenses []models.License
@@ -132,7 +144,59 @@ func (h *LicenseHandler) GetLicenses(w http.ResponseWriter, r *http.Request) {
 		filtered = append(filtered, license)
 	}
 
-	// Get total count after filtering
+	// Apply sorting
+	if sortColumn != "" {
+		sort.Slice(filtered, func(i, j int) bool {
+			ascending := sortDirection == "asc"
+
+			switch sortColumn {
+			case "licenseKey":
+				if ascending {
+					return strings.ToLower(filtered[i].LicenseKey) < strings.ToLower(filtered[j].LicenseKey)
+				}
+				return strings.ToLower(filtered[i].LicenseKey) > strings.ToLower(filtered[j].LicenseKey)
+
+			case "userId":
+				if ascending {
+					return filtered[i].UserID < filtered[j].UserID
+				}
+				return filtered[i].UserID > filtered[j].UserID
+
+			case "status":
+				if ascending {
+					return strings.ToLower(filtered[i].Status) < strings.ToLower(filtered[j].Status)
+				}
+				return strings.ToLower(filtered[i].Status) > strings.ToLower(filtered[j].Status)
+
+			case "expiresAt":
+				if ascending {
+					return filtered[i].ExpiresAt.Before(filtered[j].ExpiresAt)
+				}
+				return filtered[i].ExpiresAt.After(filtered[j].ExpiresAt)
+
+			case "createdAt":
+				if ascending {
+					return filtered[i].CreatedAt.Before(filtered[j].CreatedAt)
+				}
+				return filtered[i].CreatedAt.After(filtered[j].CreatedAt)
+
+			case "maxActivations":
+				if ascending {
+					return filtered[i].MaxActivations < filtered[j].MaxActivations
+				}
+				return filtered[i].MaxActivations > filtered[j].MaxActivations
+
+			case "activeActivations":
+				if ascending {
+					return len(filtered[i].Activations) < len(filtered[j].Activations)
+				}
+				return len(filtered[i].Activations) > len(filtered[j].Activations)
+
+			default:
+				return false
+			}
+		})
+	}
 	total := len(filtered)
 
 	// Apply pagination
@@ -658,8 +722,8 @@ func (h *LicenseHandler) UpdateLicenseStatus(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Validate status value
-	if req.Status != string(models.LicenseStatusActive) && req.Status != string(models.LicenseStatusRevoked) {
-		writeError(w, errors.NewBadRequestError("Invalid status. Must be 'Active' or 'Revoked'"))
+	if req.Status != string(models.LicenseStatusActive) && req.Status != string(models.LicenseStatusRevoked) && req.Status != "Suspended" {
+		writeError(w, errors.NewBadRequestError("Invalid status. Must be 'Active', 'Revoked', or 'Suspended'"))
 		return
 	}
 
@@ -678,6 +742,9 @@ func (h *LicenseHandler) UpdateLicenseStatus(w http.ResponseWriter, r *http.Requ
 		license.Status = req.Status
 		license.RevokedAt = &now
 	} else if req.Status == string(models.LicenseStatusActive) {
+		license.Status = req.Status
+		license.RevokedAt = nil
+	} else if req.Status == "Suspended" {
 		license.Status = req.Status
 		license.RevokedAt = nil
 	}

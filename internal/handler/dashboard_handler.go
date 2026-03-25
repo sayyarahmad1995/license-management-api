@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"license-management-api/internal/dto"
 	"license-management-api/internal/errors"
 	"license-management-api/internal/models"
 	"license-management-api/internal/repository"
@@ -131,6 +132,25 @@ func (h *DashboardHandler) GetUserDashboard(w http.ResponseWriter, r *http.Reque
 		recentLogs = userLogs
 	}
 
+	// Get all users for username lookup
+	allUsers, _, _ := h.userRepo.GetAll(1, 10000)
+	userMap := make(map[int]string)
+	for _, user := range allUsers {
+		userMap[user.ID] = user.Username
+	}
+
+	// Convert audit log models to DTOs with username information
+	auditDtos := make([]dto.AuditLogDto, len(recentLogs))
+	for i, log := range recentLogs {
+		var username *string
+		if log.UserID != nil {
+			if name, exists := userMap[*log.UserID]; exists {
+				username = &name
+			}
+		}
+		auditDtos[i] = mapAuditLogToDto(log, username)
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"userId": userID,
 		"licenses": map[string]interface{}{
@@ -142,7 +162,7 @@ func (h *DashboardHandler) GetUserDashboard(w http.ResponseWriter, r *http.Reque
 		"activations": map[string]interface{}{
 			"total": totalActivations,
 		},
-		"recentActivity": recentLogs,
+		"recentActivity": auditDtos,
 	})
 }
 

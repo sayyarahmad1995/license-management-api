@@ -11,15 +11,15 @@ type CreateLicenseDto struct {
 
 // LicenseDto represents a license
 type LicenseDto struct {
-	ID             int                        `json:"id"`
-	LicenseKey     string                     `json:"licenseKey"`
-	UserID         int                        `json:"userId"`
-	Status         string                     `json:"status"`
-	CreatedAt      time.Time                  `json:"createdAt"`
-	ExpiresAt      time.Time                  `json:"expiresAt"`
-	RevokedAt      *time.Time                 `json:"revokedAt,omitempty"`
-	MaxActivations int                        `json:"maxActivations"`
-	Activations    []LicenseActivationDto     `json:"activations,omitempty"`
+	ID             int                    `json:"id"`
+	LicenseKey     string                 `json:"licenseKey"`
+	UserID         int                    `json:"userId"`
+	Status         string                 `json:"status"`
+	CreatedAt      time.Time              `json:"createdAt"`
+	ExpiresAt      time.Time              `json:"expiresAt"`
+	RevokedAt      *time.Time             `json:"revokedAt,omitempty"`
+	MaxActivations int                    `json:"maxActivations"`
+	Activations    []LicenseActivationDto `json:"activations,omitempty"`
 }
 
 // LicenseActivationDto represents a license activation
@@ -86,5 +86,5 @@ type RevokeLicenseDto struct {
 
 // UpdateLicenseStatusDto for updating license status
 type UpdateLicenseStatusDto struct {
-	Status string `json:"status" validate:"required,oneof=Active Revoked"`
+	Status string `json:"status" validate:"required,oneof=Active Revoked Suspended"`
 }
